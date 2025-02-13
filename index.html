@@ -159,18 +159,30 @@
         let lastTime = '';
         let lastSecond = -1;
         let lastMinute = -1;
-        let isMuted = false;
+        let soundState = 'unmuted'; // 'unmuted', 'tickMuted', 'allMuted'
         
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const muteButton = document.getElementById('muteButton');
 
         muteButton.addEventListener('click', () => {
-            isMuted = !isMuted;
-            muteButton.textContent = isMuted ? '🔇' : '🔊';
+            switch(soundState) {
+                case 'unmuted':
+                    soundState = 'tickMuted';
+                    muteButton.textContent = '🔉';
+                    break;
+                case 'tickMuted':
+                    soundState = 'allMuted';
+                    muteButton.textContent = '🔇';
+                    break;
+                case 'allMuted':
+                    soundState = 'unmuted';
+                    muteButton.textContent = '🔊';
+                    break;
+            }
         });
         
         function createTickSound() {
-            if (isMuted) return;
+            if (soundState === 'tickMuted' || soundState === 'allMuted') return;
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
@@ -187,7 +199,7 @@
         }
         
         function createBeepSound() {
-            if (isMuted) return;
+            if (soundState === 'allMuted') return;
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
@@ -244,11 +256,14 @@
             requestAnimationFrame(updateClock);
         }
 
+        // Start the clock immediately
+        requestAnimationFrame(updateClock);
+
+        // Set up click listener for audio context
         document.addEventListener('click', function() {
             if (audioContext.state === 'suspended') {
                 audioContext.resume();
             }
-            requestAnimationFrame(updateClock);
         }, { once: true });
     </script>
 </body>
