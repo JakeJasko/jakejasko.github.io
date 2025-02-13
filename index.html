@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gym Timer</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Digital-7', 'LCD', monospace;
+            background-color: #1a1a1a;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @font-face {
+            font-family: 'Digital-7';
+            src: url('https://cdn.jsdelivr.net/npm/digital-7-mono@1.0.0/digital-7-mono.ttf') format('truetype');
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 0, 0, 0.05) 0%, transparent 60%),
+                radial-gradient(circle at 70% 70%, rgba(0, 255, 0, 0.05) 0%, transparent 60%),
+                linear-gradient(45deg, rgba(0, 0, 0, 0.8) 0%, rgba(40, 40, 40, 0.8) 100%);
+            animation: backgroundPulse 10s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        #clock {
+            width: 90vw;
+            text-align: center;
+            font-size: calc(90vw / 6);
+            white-space: nowrap;
+            color: #ff0000;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+            background: linear-gradient(145deg, #000000, #1a1a1a);
+            border: 8px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.5),
+                0 0 30px rgba(255,0,0,0.3),
+                0 0 50px rgba(255, 0, 0, 0.1);
+            font-family: 'Digital-7', monospace;
+            letter-spacing: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #clock::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.05)
+            );
+            transform: rotate(45deg);
+            animation: shine 10s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            from { transform: translateX(-100%) rotate(45deg); }
+            to { transform: translateX(100%) rotate(45deg); }
+        }
+
+        body.inverted #clock {
+            color: #00ff00;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.7);
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.5),
+                0 0 30px rgba(0,255,0,0.3),
+                0 0 50px rgba(0, 255, 0, 0.1);
+        }
+
+        #ticks {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            height: 80px;
+            align-items: flex-end;
+        }
+
+        .tick {
+            width: 12px;
+            height: 80px;
+            background-color: #ff0000;
+            animation: tickFadeIn 0.3s ease-out;
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(255,0,0,0.5);
+        }
+
+        @keyframes tickFadeIn {
+            from {
+                transform: scaleY(0);
+                opacity: 0;
+            }
+            to {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+        }
+
+        body.inverted .tick {
+            background-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0,255,0,0.5);
+        }
+
+        #muteButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            background: #222;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        #muteButton:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="clock"></div>
+    <div id="ticks"></div>
+    <button id="muteButton">🔊</button>
+    <audio id="tickSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
+    <audio id="beepSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
+
+    <script>
+        let lastTime = '';
+        let lastSecond = -1;
+        let lastMinute = -1;
+        let isMuted = false;
+        
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const muteButton = document.getElementById('muteButton');
+
+        muteButton.addEventListener('click', () => {
+            isMuted = !isMuted;
+            muteButton.textContent = isMuted ? '🔇' : '🔊';
+        });
+        
+        function createTickSound() {
+            if (isMuted) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+        
+        function createBeepSound() {
+            if (isMuted) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(1760, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.4);
+        }
+        
+        function updateClock() {
+            const now = new Date();
+            const formattedHours = now.getHours() % 12 || 12;
+            const formattedMinutes = now.getMinutes().toString().padStart(2, '0');
+            const formattedSeconds = now.getSeconds().toString().padStart(2, '0');
+            const formattedMilliseconds = Math.floor(now.getMilliseconds() / 10).toString().padStart(2, '0');
+            
+            const timeString = `${formattedHours}:${formattedMinutes}:${formattedSeconds}:${formattedMilliseconds}`;
+            
+            if (timeString !== lastTime) {
+                lastTime = timeString;
+                document.getElementById('clock').textContent = timeString;
+                
+                if (now.getSeconds() % 15 === 0 && now.getMilliseconds() < 100) {
+                    document.body.classList.add('inverted');
+                    createBeepSound();
+                } else if (now.getSeconds() % 15 !== 0) {
+                    document.body.classList.remove('inverted');
+                }
+
+                const currentSecond = now.getSeconds();
+                const currentMinute = now.getMinutes();
+
+                if (currentMinute !== lastMinute) {
+                    document.getElementById('ticks').innerHTML = '';
+                    lastMinute = currentMinute;
+                    lastSecond = -1;
+                }
+
+                if (currentSecond !== lastSecond) {
+                    const tick = document.createElement('div');
+                    tick.className = 'tick';
+                    document.getElementById('ticks').appendChild(tick);
+                    lastSecond = currentSecond;
+                    createTickSound();
+                }
+            }
+            
+            requestAnimationFrame(updateClock);
+        }
+
+        document.addEventListener('click', function() {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            requestAnimationFrame(updateClock);
+        }, { once: true });
+    </script>
+</body>
+</html>
