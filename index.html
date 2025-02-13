@@ -151,7 +151,7 @@
 <body>
     <div id="clock"></div>
     <div id="ticks"></div>
-    <button id="muteButton">🔊</button>
+    <button id="muteButton">🔇</button>
     <audio id="tickSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
     <audio id="beepSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
 
@@ -159,7 +159,7 @@
         let lastTime = '';
         let lastSecond = -1;
         let lastMinute = -1;
-        let soundState = 'unmuted'; // 'unmuted', 'tickMuted', 'allMuted'
+        let soundState = 'allMuted'; // 'unmuted', 'tickMuted', 'allMuted'
         
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const muteButton = document.getElementById('muteButton');
