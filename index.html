@@ -328,11 +328,13 @@
             }, delay);
         }
 
+        // Add click handler that only triggers once
         document.addEventListener('click', (e) => {
-            console.log("Click detected");
+            console.log("First click detected");
             showBowlingNotification();
-        });
+        }, { once: true }); // The 'once' option makes this listener trigger only one time
 
+        // Start scheduling notifications immediately
         scheduleRandomNotification();
 
         // Start the clock immediately
