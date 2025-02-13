@@ -17,7 +17,7 @@
 
         @font-face {
             font-family: 'Digital-7';
-            src: url('https://cdn.jsdelivr.net/npm/digital-7-mono@1.0.0/digital-7-mono.ttf') format('truetype');
+            src: url('./digital-7-mono.ttf') format('truetype');
         }
 
         body::before {
@@ -146,9 +146,57 @@
             transform: scale(1.1);
             box-shadow: 0 0 20px rgba(0,0,0,0.4);
         }
+
+        #notification {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+            transition: top 0.5s ease;
+            border: 2px solid #444;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            font-family: Arial, sans-serif;
+            pointer-events: none;
+        }
+
+        #notification.show {
+            top: 20px;
+        }
+
+        #notification img {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+        }
+
+        #notification .content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #notification .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
+    <div id="notification">
+        <img src="https://www.giantbomb.com/a/uploads/square_medium/3/39162/1707825-romanbellic_gtaiv.jpg" alt="Roman Bellic">
+        <div class="content">
+            <div class="title">Cousin Roman</div>
+            <div class="message">Hey cousin! Let's go bowling!</div>
+        </div>
+    </div>
+
     <div id="clock"></div>
     <div id="ticks"></div>
     <button id="muteButton">🔇</button>
@@ -156,6 +204,8 @@
     <audio id="beepSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
 
     <script>
+        console.log("Script running");
+
         let lastTime = '';
         let lastSecond = -1;
         let lastMinute = -1;
@@ -255,6 +305,35 @@
             
             requestAnimationFrame(updateClock);
         }
+
+        function showBowlingNotification() {
+            console.log("Showing notification");
+            const notification = document.getElementById('notification');
+            console.log("Notification element:", notification);
+            
+            if (!notification.classList.contains('show')) {
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 4000);
+            }
+        }
+        
+        function scheduleRandomNotification() {
+            const delay = Math.random() * (300000 - 120000) + 120000;
+            setTimeout(() => {
+                showBowlingNotification();
+                scheduleRandomNotification();
+            }, delay);
+        }
+
+        document.addEventListener('click', (e) => {
+            console.log("Click detected");
+            showBowlingNotification();
+        });
+
+        scheduleRandomNotification();
 
         // Start the clock immediately
         requestAnimationFrame(updateClock);
